@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Smart Bill Scanner</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 min-h-screen flex items-center justify-center">
+
+  <div class="max-w-5xl w-full mx-4 bg-white shadow-2xl rounded-3xl overflow-hidden flex flex-col lg:flex-row">
+    <!-- Left: Upload Panel -->
+    <div class="lg:w-1/3 bg-gradient-to-b from-indigo-600 to-purple-600 text-white p-8 flex flex-col justify-between">
+      <div>
+        <h1 class="text-2xl font-bold mb-2">Smart Bill Scanner</h1>
+        <p class="text-sm text-indigo-100">
+          Upload your purchase bill and instantly view item details, totals and pay securely.
+        </p>
+      </div>
+
+      <div class="mt-8">
+        <form id="uploadForm" class="space-y-4">
+          <label
+            class="w-full flex flex-col items-center justify-center border-2 border-dashed border-indigo-300 rounded-2xl px-4 py-6 cursor-pointer hover:border-white transition">
+            <span class="text-sm text-indigo-100 mb-1">Click to choose a bill</span>
+            <span class="text-xs text-indigo-200">Supported: JPG, PNG, WEBP, PDF</span>
+            <input type="file" id="fileInput" name="file" class="hidden" accept="image/*,.pdf" required />
+          </label>
+
+          <button
+            type="submit"
+            id="scanBtn"
+            class="w-full bg-white text-indigo-700 font-semibold py-2 rounded-xl hover:bg-indigo-50 transition flex items-center justify-center gap-2">
+            <span id="scanBtnText">Scan Bill</span>
+            <svg id="scanSpinner" class="hidden animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none"
+              viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor"
+                d="M4 12a8 8 0 018-8v4l3.5-3.5L12 0v4a8 8 0 100 16v-4l-3.5 3.5L12 24v-4a8 8 0 01-8-8z">
+              </path>
+            </svg>
+          </button>
+        </form>
+
+        <p id="statusMessage" class="mt-4 text-xs text-indigo-100 h-10"></p>
+      </div>
+
+      <div class="mt-6 text-[10px] text-indigo-200">
+        Powered by Veryfi • Built by You 🚀
+      </div>
+    </div>
+
+    <!-- Right: Details + Payment Panel -->
+    <div class="lg:w-2/3 p-8 bg-slate-50 flex flex-col gap-6">
+      <!-- Bill Summary -->
+      <div id="billSummary" class="hidden bg-white rounded-2xl shadow p-5">
+        <div class="flex flex-col md:flex-row justify-between gap-4 border-b pb-4">
+          <div>
+            <h2 id="vendorName" class="text-lg font-semibold text-slate-800">Vendor Name</h2>
+            <p id="vendorAddress" class="text-xs text-slate-500"></p>
+          </div>
+          <div class="text-right text-xs text-slate-500 space-y-1">
+            <p><span class="font-semibold text-slate-700">Bill To:</span> <span id="billToName"></span></p>
+            <p id="billToAddress"></p>
+            <p>Date: <span id="billDate" class="font-medium text-slate-700"></span></p>
+            <p>Invoice #: <span id="invoiceNumber" class="font-medium text-slate-700"></span></p>
+          </div>
+        </div>
+
+        <!-- Items Table -->
+        <div class="mt-4 overflow-x-auto">
+          <table class="min-w-full text-xs">
+            <thead>
+              <tr class="text-left text-slate-500 border-b">
+                <th class="py-2 pr-2">Item</th>
+                <th class="py-2 pr-2 text-right">Qty</th>
+                <th class="py-2 pr-2 text-right">Price</th>
+                <th class="py-2 pr-0 text-right">Total</th>
+              </tr>
+            </thead>
+            <tbody id="itemsBody" class="text-slate-700">
+              <!-- Filled by JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Totals -->
+        <div class="mt-4 flex flex-col items-end text-sm">
+          <div class="flex justify-between gap-10">
+            <div class="text-right space-y-1">
+              <p>Subtotal: <span id="subtotal" class="font-medium"></span></p>
+              <p>Tax: <span id="tax" class="font-medium"></span></p>
+              <p class="text-lg font-bold text-indigo-600">
+                Total: <span id="total"></span>
+              </p>
+              <p class="text-[11px] text-slate-400">Currency: <span id="currencyCode"></span></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Payment Section -->
+      <div id="paymentSection" class="hidden bg-white rounded-2xl shadow p-5">
+        <h3 class="text-base font-semibold text-slate-800 mb-3">Complete Payment</h3>
+        <p class="text-xs text-slate-500 mb-4">
+          Pay for this purchase using your preferred method.
+        </p>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4" id="paymentMethods">
+          <button
+            data-method="upi"
+            class="payment-method border border-slate-200 rounded-xl py-2 text-xs font-medium hover:border-indigo-500 hover:bg-indigo-50">
+            UPI / QR
+          </button>
+          <button
+            data-method="card"
+            class="payment-method border border-slate-200 rounded-xl py-2 text-xs font-medium hover:border-indigo-500 hover:bg-indigo-50">
+            Debit / Credit Card
+          </button>
+          <button
+            data-method="cod"
+            class="payment-method border border-slate-200 rounded-xl py-2 text-xs font-medium hover:border-indigo-500 hover:bg-indigo-50">
+            Cash on Delivery
+          </button>
+        </div>
+
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <p class="text-[11px] text-slate-500">Amount to pay</p>
+            <p class="text-xl font-bold text-indigo-600">
+              <span id="payAmount">0.00</span>
+              <span id="payCurrency" class="text-xs text-slate-500"></span>
+            </p>
+          </div>
+          <div class="text-[11px] text-slate-400">
+            Selected: <span id="selectedMethodLabel" class="font-medium text-slate-700">None</span>
+          </div>
+        </div>
+
+        <button
+          id="payNowBtn"
+          class="w-full bg-indigo-600 text-white text-sm font-semibold py-2.5 rounded-xl hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled>
+          Pay Now
+        </button>
+
+        <p id="paymentMessage" class="mt-3 text-[11px] text-green-600 h-4"></p>
+      </div>
+
+      <!-- Empty State -->
+      <div id="emptyState" class="flex-1 flex items-center justify-center text-center text-slate-400 text-sm">
+        Upload a bill from the left panel to view details and payment options here.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const uploadForm = document.getElementById("uploadForm");
+    const fileInput = document.getElementById("fileInput");
+    const scanBtn = document.getElementById("scanBtn");
+    const scanBtnText = document.getElementById("scanBtnText");
+    const scanSpinner = document.getElementById("scanSpinner");
+    const statusMessage = document.getElementById("statusMessage");
+
+    const billSummary = document.getElementById("billSummary");
+    const paymentSection = document.getElementById("paymentSection");
+    const emptyState = document.getElementById("emptyState");
+
+    const vendorName = document.getElementById("vendorName");
+    const vendorAddress = document.getElementById("vendorAddress");
+    const billToName = document.getElementById("billToName");
+    const billToAddress = document.getElementById("billToAddress");
+    const billDate = document.getElementById("billDate");
+    const invoiceNumber = document.getElementById("invoiceNumber");
+
+    const itemsBody = document.getElementById("itemsBody");
+    const subtotalEl = document.getElementById("subtotal");
+    const taxEl = document.getElementById("tax");
+    const totalEl = document.getElementById("total");
+    const currencyCodeEl = document.getElementById("currencyCode");
+
+    const payAmountEl = document.getElementById("payAmount");
+    const payCurrencyEl = document.getElementById("payCurrency");
+    const selectedMethodLabel = document.getElementById("selectedMethodLabel");
+    const payNowBtn = document.getElementById("payNowBtn");
+    const paymentMessage = document.getElementById("paymentMessage");
+
+    let selectedMethod = null;
+    let latestTotal = 0;
+    let latestCurrency = "";
+
+    // Handle upload + call backend
+    uploadForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      statusMessage.textContent = "";
+      paymentMessage.textContent = "";
+      if (!fileInput.files.length) {
+        statusMessage.textContent = "Please select a bill file first.";
+        return;
+      }
+
+      scanBtn.disabled = true;
+      scanBtnText.textContent = "Scanning...";
+      scanSpinner.classList.remove("hidden");
+      statusMessage.textContent = "Uploading and scanning bill...";
+
+      const formData = new FormData();
+      formData.append("file", fileInput.files[0]);
+
+      try {
+        const res = await fetch("process_receipt.php", {
+          method: "POST",
+          body: formData,
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || data.error) {
+          console.error(data);
+          statusMessage.textContent = "Error: " + (data.error || "Failed to scan bill.");
+          return;
+        }
+
+        statusMessage.textContent = "Bill scanned successfully ✅";
+
+        renderReceipt(data);
+        setupPayment(data);
+
+      } catch (err) {
+        console.error(err);
+        statusMessage.textContent = "Something went wrong. Check console for details.";
+      } finally {
+        scanBtn.disabled = false;
+        scanBtnText.textContent = "Scan Bill";
+        scanSpinner.classList.add("hidden");
+      }
+    });
+
+    function renderReceipt(data) {
+      emptyState.classList.add("hidden");
+      billSummary.classList.remove("hidden");
+      paymentSection.classList.remove("hidden");
+
+      vendorName.textContent = data.vendor?.name || "Unknown Vendor";
+      vendorAddress.textContent = data.vendor?.address || "";
+
+      billToName.textContent = data.bill_to?.name || "-";
+      billToAddress.textContent = (data.bill_to?.address || "").replace(/\n/g, ", ");
+
+      if (data.date) {
+        const d = new Date(data.date);
+        billDate.textContent = isNaN(d.getTime()) ? data.date : d.toLocaleDateString();
+      } else {
+        billDate.textContent = "-";
+      }
+
+      invoiceNumber.textContent = data.invoice_number || data.document_reference_number || "-";
+
+      itemsBody.innerHTML = "";
+      if (Array.isArray(data.line_items)) {
+        data.line_items.forEach((item) => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td class="py-1 pr-2">${item.description || "-"}</td>
+            <td class="py-1 pr-2 text-right">${item.quantity ?? "-"}</td>
+            <td class="py-1 pr-2 text-right">${formatMoney(item.price, data.currency_code)}</td>
+            <td class="py-1 pr-0 text-right font-medium">${formatMoney(item.total, data.currency_code)}</td>
+          `;
+          itemsBody.appendChild(tr);
+        });
+      }
+
+      subtotalEl.textContent = formatMoney(data.subtotal, data.currency_code);
+      taxEl.textContent = formatMoney(data.tax, data.currency_code);
+      totalEl.textContent = formatMoney(data.total, data.currency_code);
+      currencyCodeEl.textContent = data.currency_code || "";
+    }
+
+    function setupPayment(data) {
+      latestTotal = data.total || 0;
+      latestCurrency = data.currency_code || "";
+
+      payAmountEl.textContent = latestTotal.toFixed(2);
+      payCurrencyEl.textContent = latestCurrency;
+
+      selectedMethod = null;
+      selectedMethodLabel.textContent = "None";
+      payNowBtn.disabled = true;
+      paymentMessage.textContent = "";
+
+      document.querySelectorAll(".payment-method").forEach((btn) => {
+        btn.classList.remove("ring-2", "ring-indigo-500", "bg-indigo-50");
+        btn.addEventListener("click", () => {
+          document.querySelectorAll(".payment-method").forEach((b) => {
+            b.classList.remove("ring-2", "ring-indigo-500", "bg-indigo-50");
+          });
+          btn.classList.add("ring-2", "ring-indigo-500", "bg-indigo-50");
+          selectedMethod = btn.dataset.method;
+          selectedMethodLabel.textContent = btn.textContent.trim();
+          payNowBtn.disabled = false;
+        });
+      });
+    }
+
+    payNowBtn.addEventListener("click", () => {
+      if (!selectedMethod) return;
+      paymentMessage.textContent =
+        `✅ Payment of ${latestTotal.toFixed(2)} ${latestCurrency} via ${selectedMethod.toUpperCase()} is simulated. Integrate gateway here.`;
+    });
+
+    function formatMoney(value, currency) {
+      if (value == null) return "-";
+      return `${currency || ""} ${Number(value).toFixed(2)}`;
+    }
+  </script>
+</body>
+</html>
