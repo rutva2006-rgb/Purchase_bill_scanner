@@ -21,9 +21,9 @@ if (!isset($_FILES['file'])) {
 }
 
 // Veryfi credentials (REPLACE with your actual ones)
-$clientId = "vrfIaJn6E0Z7MZb7V6mppm0cjzReVgUKNkeam1E";
-$username = "rutu.chauhan.0007";
-$apiKey   = "fb683d411cd617fc615b76bc45f3739b";
+$clientId = "YOUR_CLIENT_ID";
+$username = "YOUR_USERNAME";
+$apiKey   = "YOUR_API_KEY";
 $filePath = $_FILES['file']['tmp_name'];
 $fileName = $_FILES['file']['name'];
 
