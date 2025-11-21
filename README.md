@@ -96,9 +96,9 @@ bill-scan/
 4. In `process_receipt.php`, update:
 
    ```php
-   $clientId = "YOUR_CLIENT_ID";
-   $username = "YOUR_USERNAME";
-   $apiKey   = "YOUR_API_KEY";
+  $clientId = "YOUR_CLIENT_ID";
+  $username = "YOUR_USERNAME";
+  $apiKey   = "YOUR_API_KEY";
    ```
 
 ---
